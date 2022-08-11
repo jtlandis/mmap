@@ -1,21 +1,29 @@
 Ops.mmap <- function(e1,e2) {
-  OPS <- switch(.Generic,"=="=1L,
-                         "!="=2L,
-                         ">="=3L,
-                         "<="=4L,
-                         ">"= 5L,
-                         "<"= 6L,
-                             -1L)
-  if(OPS == -1L)
+
+  if(!is.element(.Generic, c("==","!=",">=","<=",">","<")))
     stop(paste(.Generic,"unsupported for 'mmap' objects"))
   if(is.mmap(e1)) {
+    OPS <- switch(.Generic,"=="=1L,
+                  "!="=2L,
+                  ">="=3L,
+                  "<="=4L,
+                  ">"= 5L,
+                  "<"= 6L,
+                  -1L)
     if(storage.mode(e1$storage.mode) == "character")
       e2 <- charToRaw(e2)
-    .Call("mmap_compare", e2, OPS, e1) 
+    .Call("mmap_compare", e2, OPS, e1)
   } else if(is.mmap(e2)) {
+    OPS <- switch(.Generic,"=="=1L,
+                  "!="=2L,
+                  ">="=4L,
+                  "<="=3L,
+                  ">"= 6L,
+                  "<"= 5L,
+                  -1L)
     if(storage.mode(e2$storage.mode) == "character")
       e1 <- charToRaw(e1)
-    .Call("mmap_compare", e1, OPS, e2) 
+    .Call("mmap_compare", e1, OPS, e2)
   }
 }
 
