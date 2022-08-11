@@ -1,6 +1,6 @@
 # C_types
 sizeofCtypes <- function() {
-  structure(.Call("sizeof_Ctypes"), 
+  structure(.Call("sizeof_Ctypes"),
             .Names=c("char","short","int","long","float","double"))
 }
 
@@ -61,7 +61,7 @@ char <- C_char <- function(length=0, nul=TRUE) {
 as.char <- function(x, ...) UseMethod("as.char")
 as.char.mmap <- function(x, length, ...) {
   x$storage.mode <- char(length)
-  x 
+  x
 }
 
 uchar <- C_uchar <- function(length=0) {
@@ -72,7 +72,7 @@ uchar <- C_uchar <- function(length=0) {
 as.uchar <- function(x, ...) UseMethod("as.uchar")
 as.uchar.mmap <- function(x, length, ...) {
   x$storage.mode <- uchar(length)
-  x 
+  x
 }
 
 int8 <- function(length=0) {
@@ -142,11 +142,11 @@ uint32 <- C_uint <- function(length=0) {
   structure(integer(length), bytes=4L, signed=0L, class=c("Ctype","uint"))
 }
 
-real32 <- C_float <- function(length=0) { 
+real32 <- C_float <- function(length=0) {
   structure(double(length),  bytes=4L, signed=1L, class=c("Ctype","float"))
 }
 
-real64 <- C_double <- function(length=0) { 
+real64 <- C_double <- function(length=0) {
   structure(double(length),  bytes=8L, signed=1L, class=c("Ctype","double"))
 }
 
@@ -184,27 +184,27 @@ pad.Ctype <- function(ctype, ...) {
       bytes <- sapply(dots, attr, which = "bytes")
     if( missing(offset))
       offset <- cumsum(bytes) - bytes
-    structure(dots, bytes = as.integer(sum(bytes)), 
-                    offset = as.integer(offset), 
-                    signed = NA, 
+    structure(dots, bytes = as.integer(sum(bytes)),
+                    offset = as.integer(offset),
+                    signed = NA,
               class = c("Ctype", "struct"))
 }
 
 struct <- function (..., bytes, offset) {
     dots <- lapply(list(...), as.Ctype)
     bytes_ <- sapply(dots, attr, which = "bytes")
-    if (missing(offset)) 
+    if (missing(offset))
       offset <- cumsum(bytes_) - bytes_
-    if (!missing(bytes)) 
+    if (!missing(bytes))
       bytes_ <- bytes
     padding <- which(sapply(dots, function(C) class(C)[2])=="pad")
     if( length(padding) > 0) {
       dots <- dots[-padding]
       offset <- offset[-padding]
     }
-    structure(dots, bytes = as.integer(sum(bytes_)), 
-                    offset = as.integer(offset), 
-                    signed = NA, 
+    structure(dots, bytes = as.integer(sum(bytes_)),
+                    offset = as.integer(offset),
+                    signed = NA,
               class = c("Ctype", "struct"))
 }
 
@@ -221,12 +221,13 @@ print.Ctype <- function(x, ...) {
   if(class(x)[2] == "struct") {
     cat("struct:\n")
     for(i in 1:length(x)) {
-    cat(paste("  (",class(x[[i]])[2],") ",sep=""))
-    attributes(x[[i]]) <- NULL
-    if(length(x[[i]])==0)
-      cat(paste(typeof(x[[i]]),"(0)\n",sep=""))
-    else
-    cat(x[[i]],"\n")
+      y <- x[[i]]
+      cat(paste(" (", class(y)[2], ") ", sep = ""))
+      attributes(y) <- NULL
+      if (length(y)==0)
+        cat(paste(typeof(y),"(0)\n", sep = ""))
+      else
+        cat(y,"\n")
     }
   } else {
     cat(paste("(",class(x)[2],") ",sep=""))
@@ -254,7 +255,7 @@ as.struct.default <- function(x, ...) {
   if(inherits(x,"struct"))
     return(x)
   x <- as.list(x)
-  types <- lapply(lapply(x,class), 
+  types <- lapply(lapply(x,class),
              function(CLASS) switch(CLASS,
                              "raw"=char(),
                              "integer"=int32(),
