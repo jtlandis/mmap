@@ -1914,48 +1914,105 @@ SEXP mmap_compare (SEXP compare_to, SEXP compare_how, SEXP mmap_obj) {
     cmp_len = length(compare_to);
     cmp_to_raw = RAW(compare_to);
     char *str;
-    int str_len;
+    int str_len, cmm_len, mem_cmp;
     char *str_buf = R_alloc(sizeof(char), Cbytes);
     int hasnul = 1;
     if( !isNull(getAttrib(MMAP_SMODE(mmap_obj), nul_Symbol)))
       hasnul = asLogical(getAttrib(MMAP_SMODE(mmap_obj),nul_Symbol));
 
-    //if(isNull(getAttrib(MMAP_SMODE(mmap_obj),install("nul")))) {
-    if(hasnul) {
-      for(i=0; i < LEN; i++) {
-        str = &(data[i*Cbytes]);
-        //strncpy(str_buf, str, Cbytes);
-        //str_len = strlen(str_buf);
-        //str_len = (str_len > Cbytes) ? Cbytes : str_len;
-        //Rprintf("strnlen(str,6):%i\n",strnlen(str,6));
-        //if(str_len != cmp_len)
-          //continue;
-        if(memcmp(str,cmp_to_raw,cmp_len)==0)
-          int_result[hits++] = i+1;
-      }
-//      for(i=0; i < LEN; i++) {
-//          //for(b=0; b < Cbytes-1; b++) {
-//          for(b=0; b < cmp_len; b++) {
-//            Rprintf("%c == %c,", cmp_to_raw[b], data[i*Cbytes+b]);
-//            if(cmp_to_raw[b] != data[i*Cbytes + b])
-//              break;
-//          }
-//          Rprintf("\n");
-//          if(b == Cbytes-1)
-//            int_result[hits++] = i+1;
-//      }
-    } else {
+    if (cmp_how==1) {
+      //require exact matches
       for(i=0; i < LEN; i++) {
         str = &(data[i*Cbytes]);
         strncpy(str_buf, str, Cbytes);
         str_len = strlen(str_buf);
         str_len = (str_len > Cbytes) ? Cbytes : str_len;
-        //Rprintf("strnlen(str,6):%i\n",strnlen(str,6));
+        //length dont match - skip
         if(str_len != cmp_len)
           continue;
-        if(memcmp(str,cmp_to_raw,cmp_len)==0)
+
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        if(memcmp(str,cmp_to_raw,cmm_len)==0)
           int_result[hits++] = i+1;
       }
+    } else if (cmp_how==2) {
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes]);
+        strncpy(str_buf, str,  Cbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > Cbytes) ? Cbytes : str_len;
+        //if lengths dont match - inc
+        if(str_len != cmp_len) {
+          int_result[hits++] = i+1;
+          continue;
+        }
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        //if not equal to 0 - inc
+        if(memcmp(str,cmp_to_raw,cmm_len)!=0)
+          int_result[hits++] = i+1;
+      }
+    } else if (cmp_how==3) {
+      // req >=
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes]);
+        strncpy(str_buf, str, Cbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > Cbytes) ? Cbytes : str_len;
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
+        if(mem_cmp>0) {
+          int_result[hits++] = i+1;
+          continue;
+        }
+        if(mem_cmp==0&&str_len>=cmp_len)
+          int_result[hits++] = i+1;
+
+      }
+    } else if (cmp_how==4) {
+      // req <=
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes]);
+        strncpy(str_buf, str, Cbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > Cbytes) ? Cbytes : str_len;
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
+
+        if(mem_cmp<0) {
+          int_result[hits++] = i+1;
+          continue;
+        }
+        if(mem_cmp==0&&str_len<=cmp_len)
+          int_result[hits++] = i+1;
+
+      }
+    } else if (cmp_how==5) {
+      // req >
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes]);
+        strncpy(str_buf, str, Cbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > Cbytes) ? Cbytes : str_len;
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
+        if (mem_cmp>0 || (mem_cmp==0 && str_len>cmp_len))
+          int_result[hits++] = i+1;
+
+      }
+    } else if (cmp_how==6) {
+      // req <
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes]);
+        strncpy(str_buf, str, Cbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > Cbytes) ? Cbytes : str_len;
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
+        if (mem_cmp<0 || (mem_cmp==0 && str_len<cmp_len))
+          int_result[hits++] = i+1;
+
+      }
+
     }
     break; /* }}} */
   case CPLXSXP:
@@ -2032,9 +2089,7 @@ SEXP mmap_compare_struct (SEXP compare_to, SEXP compare_how, SEXP mmap_obj, SEXP
   int fieldSigned = INTEGER(getAttrib(dat, mmap_signedSymbol))[0];
 
   SEXP result;
-  // this next like might be an error...
   LEN = (long)(MMAP_SIZE(mmap_obj)/Cbytes);  /* change to REAL */
-  printf("the calculated length is %ld", LEN);
   PROTECT(result = allocVector(INTSXP, LEN));
   int *int_result = INTEGER(result);
   /* comp_how
@@ -2670,138 +2725,95 @@ SEXP mmap_compare_struct (SEXP compare_to, SEXP compare_how, SEXP mmap_obj, SEXP
     if( !isNull(getAttrib(MMAP_SMODE(mmap_obj), nul_Symbol)))
       hasnul = asLogical(getAttrib(MMAP_SMODE(mmap_obj),nul_Symbol));
 
-    //if(isNull(getAttrib(MMAP_SMODE(mmap_obj),install("nul")))) {
-    if(hasnul) {
-      if (cmp_how==1) {
-        for(i=0; i < LEN; i++) {
-          str = &(data[i * Cbytes + offset]);
-          if(memcmp(str, cmp_to_raw, cmp_len)==0)
-            int_result[hits++] = i+1;
-        }
-      } else if (cmp_how==2) {
-        for(i=0; i < LEN; i++) {
-          str = &(data[i * Cbytes + offset]);
-          if(memcmp(str, cmp_to_raw, cmp_len)!=0)
-            int_result[hits++] = i+1;
-        }
-      } else if (cmp_how==3) {
-        for(i=0; i < LEN; i++) {
-          str = &(data[i * Cbytes + offset]);
-          if(memcmp(str, cmp_to_raw, cmp_len)>=0)
-            int_result[hits++] = i+1;
-        }
-      } else if (cmp_how==4) {
-        for(i=0; i < LEN; i++) {
-          str = &(data[i * Cbytes + offset]);
-          if(memcmp(str, cmp_to_raw, cmp_len)<=0)
-            int_result[hits++] = i+1;
-        }
-      } else if (cmp_how==5) {
-        for(i=0; i < LEN; i++) {
-          str = &(data[i*Cbytes + offset]);
-          if(memcmp(str, cmp_to_raw, cmp_len)>0)
-            int_result[hits++] = i+1;
-        }
-      } else if (cmp_how==6) {
-        for(i=0; i < LEN; i++) {
-          str = &(data[i*Cbytes + offset]);
-          if(memcmp(str, cmp_to_raw, cmp_len)<0)
-            int_result[hits++] = i+1;
-        }
+    if (cmp_how==1) {
+      //require exact matches
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes + offset]);
+        strncpy(str_buf, str, fieldCbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
+        //length dont match - skip
+        if(str_len != cmp_len)
+          continue;
+
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        if(memcmp(str,cmp_to_raw,cmm_len)==0)
+          int_result[hits++] = i+1;
       }
-
-    } else {
-      if (cmp_how==1) {
-        //require exact matches
-        for(i=0; i < LEN; i++) {
-          str = &(data[i*Cbytes + offset]);
-          strncpy(str_buf, str, fieldCbytes);
-          str_len = strlen(str_buf);
-          str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
-          //length dont match - skip
-          if(str_len != cmp_len)
-            continue;
-
-          cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
-          if(memcmp(str,cmp_to_raw,cmm_len)==0)
-            int_result[hits++] = i+1;
+    } else if (cmp_how==2) {
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes + offset]);
+        strncpy(str_buf, str, fieldCbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
+        //if lengths dont match - inc
+        if(str_len != cmp_len) {
+          int_result[hits++] = i+1;
+          continue;
         }
-      } else if (cmp_how==2) {
-        for(i=0; i < LEN; i++) {
-          str = &(data[i*Cbytes + offset]);
-          strncpy(str_buf, str, fieldCbytes);
-          str_len = strlen(str_buf);
-          str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
-          //if lengths dont match - inc
-          if(str_len != cmp_len) {
-            int_result[hits++] = i+1;
-            continue;
-          }
-          cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
-          //if not equal to 0 - inc
-          if(memcmp(str,cmp_to_raw,cmm_len)!=0)
-            int_result[hits++] = i+1;
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        //if not equal to 0 - inc
+        if(memcmp(str,cmp_to_raw,cmm_len)!=0)
+          int_result[hits++] = i+1;
+      }
+    } else if (cmp_how==3) {
+      // req >=
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes + offset]);
+        strncpy(str_buf, str, fieldCbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
+        if(mem_cmp>0) {
+          int_result[hits++] = i+1;
+          continue;
         }
-      } else if (cmp_how==3) {
-        // req >=
-        for(i=0; i < LEN; i++) {
-          str = &(data[i*Cbytes + offset]);
-          strncpy(str_buf, str, fieldCbytes);
-          str_len = strlen(str_buf);
-          str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
-          cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
-          mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
-          if(mem_cmp>0) {
-            int_result[hits++] = i+1;
-            continue;
-          }
-          if(mem_cmp==0&&str_len>=cmp_len)
-            int_result[hits++] = i+1;
+        if(mem_cmp==0&&str_len>=cmp_len)
+          int_result[hits++] = i+1;
 
+      }
+    } else if (cmp_how==4) {
+      // req <=
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes + offset]);
+        strncpy(str_buf, str, fieldCbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
+        if(mem_cmp<0) {
+          int_result[hits++] = i+1;
+          continue;
         }
-      } else if (cmp_how==4) {
-        // req <=
-        for(i=0; i < LEN; i++) {
-          str = &(data[i*Cbytes + offset]);
-          strncpy(str_buf, str, fieldCbytes);
-          str_len = strlen(str_buf);
-          str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
-          cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
-          mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
-          if(mem_cmp<0) {
-            int_result[hits++] = i+1;
-            continue;
-          }
-          if(mem_cmp==0&&str_len<=cmp_len)
-            int_result[hits++] = i+1;
+        if(mem_cmp==0&&str_len<=cmp_len)
+          int_result[hits++] = i+1;
 
-        }
-      } else if (cmp_how==5) {
-        // req >
-        for(i=0; i < LEN; i++) {
-          str = &(data[i*Cbytes + offset]);
-          strncpy(str_buf, str, fieldCbytes);
-          str_len = strlen(str_buf);
-          str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
-          cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
-          mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
-          if (mem_cmp>0 || (mem_cmp==0 && str_len>cmp_len))
-            int_result[hits++] = i+1;
+      }
+    } else if (cmp_how==5) {
+      // req >
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes + offset]);
+        strncpy(str_buf, str, fieldCbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
+        if (mem_cmp>0 || (mem_cmp==0 && str_len>cmp_len))
+          int_result[hits++] = i+1;
 
-        }
-      } else if (cmp_how==6) {
-        // req <
-        for(i=0; i < LEN; i++) {
-          str = &(data[i*Cbytes + offset]);
-          strncpy(str_buf, str, fieldCbytes);
-          str_len = strlen(str_buf);
-          str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
-          cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
-          mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
-          if (mem_cmp<0 || (mem_cmp==0 && str_len<cmp_len))
-            int_result[hits++] = i+1;
-
-        }
+      }
+    } else if (cmp_how==6) {
+      // req <
+      for(i=0; i < LEN; i++) {
+        str = &(data[i*Cbytes + offset]);
+        strncpy(str_buf, str, fieldCbytes);
+        str_len = strlen(str_buf);
+        str_len = (str_len > fieldCbytes) ? fieldCbytes : str_len;
+        cmm_len = (str_len > cmp_len) ? cmp_len : str_len;
+        mem_cmp = memcmp(str, cmp_to_raw, cmm_len);
+        if (mem_cmp<0 || (mem_cmp==0 && str_len<cmp_len))
+          int_result[hits++] = i+1;
 
       }
 
