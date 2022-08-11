@@ -27,6 +27,45 @@ Ops.mmap <- function(e1,e2) {
   }
 }
 
+do_struct_ops <- function(mmap, field, comp, ops) {
+  if(!is.element(ops, c("==","!=",">=","<=",">","<")))
+    stop(paste(ops,"unsupported for 'mmap' objects"))
+
+  if(!is.mmap(mmap))
+    stop("arg `mmap` must be a mmap object")
+
+  if (!is.struct(mmap$storage.mode))
+    stop("arg `mmap` must have a 'struct' storage mode")
+
+  OPS <- switch(ops,"=="=1L,
+                "!="=2L,
+                ">="=3L,
+                "<="=4L,
+                ">"= 5L,
+                "<"= 6L,
+                -1L)
+  if (OPS==-1L)
+    stop(ops, " unsupported operation")
+
+  if (is.character(field)) {
+    f <- match(field, names(mmap$storage.mode), nomatch = NA_character_)
+    if (is.na(f))
+      stop(field, " does not match any names: ", names(mmap$storage.mode))
+  } else if(!is.integer(field)) {
+    f <- as.integer(field)
+    if (f>length(mmap$storage.mode))
+      stop("coerced ", field, " to integer and index is out of bounds")
+  } else {
+    f <- field
+  }
+
+  if (storage.mode(mmap$storage.mode[[f]])=="character")
+    comp <- charToRaw(comp)
+
+  .Call("mmap_compare_struct", comp, OPS, mmap, as.integer(field))
+
+}
+
 dim.mmap <- function(x) {
   if( is.struct(x$storage.mode))
     return( c(length(x), length(x$storage.mode)) )

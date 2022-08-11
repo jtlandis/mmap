@@ -70,6 +70,7 @@ R_CallMethodDef callMethods[] = {
   {"mmap_extract",          (DL_FUNC) &mmap_extract,            4},
   {"mmap_replace",          (DL_FUNC) &mmap_replace,            4},
   {"mmap_compare",          (DL_FUNC) &mmap_compare,            3},
+  {"mmap_compare_struct",   (DL_FUNC) &mmap_compare_struct,     4},
   {"convert_ij_to_i",       (DL_FUNC) &convert_ij_to_i,         3},
   {"sizeof_Ctypes",         (DL_FUNC) &sizeof_Ctypes,           0},
   {NULL,                    NULL,                               0}

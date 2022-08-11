@@ -113,6 +113,7 @@ SEXP mmap_mprotect (SEXP mmap_obj, SEXP index, SEXP prot);
 SEXP mmap_extract (SEXP index, SEXP field, SEXP dim, SEXP mmap_obj);
 SEXP mmap_replace (SEXP index, SEXP field, SEXP value, SEXP mmap_obj);
 SEXP mmap_compare (SEXP compare_to, SEXP compare_how, SEXP mmap_obj);
+SEXP mmap_compare_struct (SEXP compare_to, SEXP compare_how, SEXP mmap_obj, SEXP field);
 SEXP convert_ij_to_i (SEXP rows, SEXP i, SEXP j);
 SEXP sizeof_Ctypes ();
 
@@ -124,7 +125,7 @@ float  mmap_rev_float(const float x, int len);
 double mmap_rev_double(const double x, int len);
 
 #ifdef __ICC
-/* ICC has no madvise in standard naming/place 
+/* ICC has no madvise in standard naming/place
    patch based on one submitted by Daniel Cegielka */
 
 #define MADV_NORMAL 0x0     /* default page-in behavior */
